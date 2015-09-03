@@ -1,0 +1,1 @@
+include ':sharp-api', ':sharp-processor', ':app'
