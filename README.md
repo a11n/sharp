@@ -18,8 +18,8 @@ String myStringPreference = sharedPreferences.getString("my_string_preferences",
 int myIntPreference = sharedPreferences.getInt("my_int_preferences", 0);
 ...
 
-editor.putString("my_string_preference", "FooBar");
-editor.putInt("my_int_preference", 42);
+editor.putString("my_string_preference", "FooBar").apply();
+editor.putInt("my_int_preference", 42).apply();
 ...
 
 ```
