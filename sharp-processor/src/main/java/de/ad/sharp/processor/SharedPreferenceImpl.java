@@ -1,0 +1,143 @@
+package de.ad.sharp.processor;
+
+import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.JavaFile;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.TypeSpec;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
+
+public class SharedPreferenceImpl {
+  private TypeSpec typeSpec;
+
+  public static SharedPreferenceImpl of(TypeElement annotatedType) {
+    return new SharedPreferenceImpl(annotatedType);
+  }
+
+  private SharedPreferenceImpl(TypeElement annotatedInterface) {
+    verifyArgumentIsInterface(annotatedInterface);
+
+    String className = annotatedInterface.getSimpleName() + "Impl";
+    ClassName interfaceName = ClassName.get(annotatedInterface);
+    Iterable<MethodSpec> methods = generateMethodsOf(annotatedInterface);
+
+    typeSpec = TypeSpec.classBuilder(className)
+        .addSuperinterface(interfaceName)
+        .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+        .addMethods(methods)
+        .build();
+  }
+
+  private Iterable<MethodSpec> generateMethodsOf(TypeElement annotatedInterface) {
+    List<MethodSpec> methodSpecs = new ArrayList<>();
+
+    Iterable<ExecutableElement> methods = getMethodsOf(annotatedInterface);
+    for (ExecutableElement method : methods) {
+      MethodSpec methodSpec = generateMethodOf(method);
+
+      methodSpecs.add(methodSpec);
+    }
+
+    return methodSpecs;
+  }
+
+  private MethodSpec generateMethodOf(ExecutableElement method) {
+    String name = method.getSimpleName().toString();
+    Collection<ParameterSpec> parameters = generateParametersOf(method);
+    TypeName returnType = TypeName.get(method.getReturnType());
+    CodeBlock code = generateCode(name, parameters, returnType);
+
+    return MethodSpec.methodBuilder(name)
+        .addAnnotation(Override.class)
+        .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+        .addParameters(parameters)
+        .addCode(code)
+        .returns(returnType)
+        .build();
+  }
+
+  private CodeBlock generateCode(String name, Collection<ParameterSpec> parameters,
+      TypeName returnType) {
+    if (name.startsWith("get")) {
+      return generateGetter(name, parameters, returnType);
+    } else if (name.startsWith("set")) {
+      return generateSetter(name, parameters, returnType);
+    } else {
+      throw new IllegalArgumentException(
+          "Method names are supposed to either start with 'get' or 'set'.");
+    }
+  }
+
+  private CodeBlock generateGetter(String name, Collection<ParameterSpec> parameters,
+      TypeName returnType) {
+    if (parameters.size() > 0) {
+      throw new IllegalArgumentException("Getters are not allowed to have parameters.");
+    } else if (TypeName.VOID.equals(returnType)) {
+      throw new IllegalArgumentException(
+          "Getters are supposed to have a return type other than void.");
+    }
+    return CodeBlock.builder().addStatement("return null").build();
+  }
+
+  private CodeBlock generateSetter(String name, Collection<ParameterSpec> parameters,
+      TypeName returnType) {
+    if (parameters.size() != 1) {
+      throw new IllegalArgumentException("Setters are supposed to have exactly one parameter.");
+    } else if (!TypeName.VOID.equals(returnType)) {
+      throw new IllegalArgumentException("Setters are supposed to return void.");
+    }
+
+    return CodeBlock.builder().build();
+  }
+
+  private Collection<ParameterSpec> generateParametersOf(ExecutableElement method) {
+    List<ParameterSpec> parameters = new ArrayList<>();
+
+    List<? extends VariableElement> methodParameters = method.getParameters();
+    for (VariableElement methodParameter : methodParameters) {
+      TypeName type = TypeName.get(methodParameter.asType());
+      String name = methodParameter.getSimpleName().toString();
+      Set<Modifier> methodModifiers = methodParameter.getModifiers();
+      Modifier[] modifiers = methodModifiers.toArray(new Modifier[methodModifiers.size()]);
+
+      ParameterSpec parameter = ParameterSpec.builder(type, name, modifiers).build();
+
+      parameters.add(parameter);
+    }
+
+    return parameters;
+  }
+
+  private Iterable<ExecutableElement> getMethodsOf(TypeElement annotatedInterface) {
+    List<ExecutableElement> methods = new ArrayList<>();
+
+    List<? extends Element> enclosedElements = annotatedInterface.getEnclosedElements();
+    for (Element element : enclosedElements)
+      if (element instanceof ExecutableElement) methods.add((ExecutableElement) element);
+
+    return methods;
+  }
+
+  public JavaFile toJava(String packageName) {
+    return JavaFile.builder(packageName, typeSpec)
+        .addFileComment("Auto-generated by SharP. Please do not modify!")
+        .build();
+  }
+
+  private void verifyArgumentIsInterface(TypeElement annotatedType) {
+    if (annotatedType.getKind() != ElementKind.INTERFACE) {
+      throw new IllegalArgumentException("@SharedPreference is only allowed for interfaces.");
+    }
+  }
+}
