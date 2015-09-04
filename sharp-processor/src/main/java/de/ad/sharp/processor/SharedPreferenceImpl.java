@@ -193,7 +193,7 @@ public class SharedPreferenceImpl {
     String value = parameters.get(0).name;
 
     return CodeBlock.builder()
-        .addStatement("$L.$L($S, $L)", "editor", setterName, key, value)
+        .addStatement("$L.$L($S, $L).apply()", "editor", setterName, key, value)
         .build();
   }
 

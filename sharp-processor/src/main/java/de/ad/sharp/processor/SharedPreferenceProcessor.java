@@ -12,9 +12,11 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.Elements;
 
 public class SharedPreferenceProcessor extends AbstractProcessor {
   private Messager messager;
+  private Elements elements;
 
   @Override public Set<String> getSupportedAnnotationTypes() {
     return Collections.singleton(SharedPreference.class.getCanonicalName());
@@ -28,6 +30,7 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
     super.init(processingEnv);
 
     messager = processingEnv.getMessager();
+    elements = processingEnv.getElementUtils();
   }
 
   @Override
@@ -46,7 +49,7 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
   }
 
   private String getPackageNameOf(Element element) {
-    return processingEnv.getElementUtils().getPackageOf(element).toString();
+    return elements.getPackageOf(element).toString();
   }
 
   private void tryToWrite(JavaFile javaFile) {
