@@ -2,7 +2,6 @@ package de.ad.sharp.processor;
 
 import com.squareup.javapoet.JavaFile;
 import de.ad.sharp.api.SharedPreference;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
@@ -13,6 +12,8 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
+
+import static javax.tools.Diagnostic.Kind.ERROR;
 
 public class SharedPreferenceProcessor extends AbstractProcessor {
   private Messager messager;
@@ -43,20 +44,20 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
 
   private void process(TypeElement annotatedType) {
     String packageName = getPackageNameOf(annotatedType);
-    JavaFile javaFile = SharedPreferenceImpl.of(annotatedType).toJava(packageName);
 
-    tryToWrite(javaFile);
+    try {
+      JavaFile javaFile = SharedPreferenceImpl.of(annotatedType).toJavaIn(packageName);
+      javaFile.writeTo(processingEnv.getFiler());
+    } catch(Exception e){
+      error(e.getMessage());
+    }
   }
 
   private String getPackageNameOf(Element element) {
     return elements.getPackageOf(element).toString();
   }
 
-  private void tryToWrite(JavaFile javaFile) {
-    try {
-      javaFile.writeTo(processingEnv.getFiler());
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+  private void error(String message) {
+    messager.printMessage(ERROR, message);
   }
 }
