@@ -1,15 +1,22 @@
 package de.ad.sharp;
 
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
+import de.ad.sharp.api.SharP;
 
 public class MainActivity extends AppCompatActivity {
 
   @Override protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
+
+    LocalStorage localStorage = SharP.load(this, LocalStorage.class);
+    localStorage.setStringPreference("Hello @SharP!");
+
+    ((TextView) findViewById(R.id.textView)).setText(localStorage.getStringPreference());
   }
 
   @Override public boolean onCreateOptionsMenu(Menu menu) {
