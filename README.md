@@ -58,6 +58,9 @@ In order to be lightweight and convenient SharP is designed according to the [Co
  * have exactly one parameter of a *valid type*
  * must return `void`
  * Example: `void setMyStringPreference(String value);`
-* the method name is formatted to underscore and used as key
-  * Example: `getMyStringPreference() -> key: my_string_preference`
+* Property names have to be unique for the same type
+ * The method name is formatted to underscore notation and used as key (Example: `getMyStringPreference() -> key: my_string_preference`)
+ * Valid: `int getFoo();` + `void setFoor(int bar);`
+ * Invalid: `int getFoo();` + `String getFoo();` <- "foo" is already registered for type int
+ * Also invalid: `int getFoo();` + `void setFoo(String bar)`;
 * Valid types are: `int`, `long`, `float`, `boolean` and `String`
