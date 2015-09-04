@@ -1,1 +1,1 @@
-include ':sharp-api', ':sharp-processor', ':app'
+include ':sharp-api', ':sharp-processor', ':sharp-sample'
