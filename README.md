@@ -88,7 +88,7 @@ String myStringPreference = storage.getMyStringPreference();
 ```
 
 ##Principles
-In order to be lightweight and convenient SharP is designed according to the [Convetion over Configuration paradigm](https://en.wikipedia.org/wiki/Convention_over_configuration).
+In order to be lightweight and convenient SharP is designed according to the [Convention over Configuration paradigm](https://en.wikipedia.org/wiki/Convention_over_configuration).
 
 ###Conventions
 * The `interface` name is used as filename to store your key-value-pairs
