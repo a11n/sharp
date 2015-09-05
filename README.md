@@ -1,8 +1,52 @@
-#SHARP
+#SharP
 
-An annotation based **Shar**ed**P**references wrapper.
+SharP wraps your **Shar**ed**P**references into a clean, type-safe Java interface. It uses annotation processing to generate the boilerplate code for you.
+
+Just declare your interface and annotate it to be a `@SharedPreference`:
+```java
+@SharedPreference
+interface LocalStorage{
+  String getMyStringPreference();
+  void setMyStringPreference(String value);
+  int getMyIntPreference();
+  void setMyIntPreference(int value);
+}
+```
+
+...then load its auto-generated implementation using `SharP`:
+
+```java
+LocalStorage storage = SharP.load(context, LocalStorage.class);
+
+String myStringPreference = storage.getMyStringPreference();
+int myIntPreference = storage.getMyIntPreference();
+
+storage.setMyStringPreference("FooBar");
+storage.setMyIntPreference(42);
+```
+That's it. No struggling with keys anymore.
 
 **!!! This library is still under development. !!!**
+
+##Usage
+SharP is available via `jcenter()`. The [android-apt](https://bitbucket.org/hvisser/android-apt) plugin is used to setup SharP as annotation processor in Android Studio.
+```java
+buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath 'com.neenbedankt.gradle.plugins:android-apt:1.6'
+  }
+}
+
+apply plugin: 'com.neenbedankt.android-apt'
+
+dependencies {
+  compile 'de.ad:sharp-api:0.1.0'
+  apt 'de.ad:sharp-processor:0.1.0'
+}
+```
 
 ##Motivation
 Android features [a couple of data storage options](http://developer.android.com/guide/topics/data/data-storage.html). One of them is [SharedPreferences](http://developer.android.com/guide/topics/data/data-storage.html#pref):
@@ -39,7 +83,7 @@ interface LocalStorage{
 Wherever you need to access your persistent data just grab an instance of your `LocalStorage` using SharP (ideally you do this once in your `Application` class):
 
 ```java
-LocalStorage storage = SharP.in(context).load(LocalStorage.class);
+LocalStorage storage = SharP.load(context, LocalStorage.class);
 String myStringPreference = storage.getMyStringPreference();
 ```
 
@@ -60,7 +104,7 @@ In order to be lightweight and convenient SharP is designed according to the [Co
  * Example: `void setMyStringPreference(String value);`
 * Property names have to be unique for the same type
  * The method name is formatted to underscore notation and used as key (Example: `getMyStringPreference() -> key: my_string_preference`)
- * Valid: `int getFoo();` + `void setFoor(int bar);`
+ * Valid: `int getFoo();` + `void setFoo(int bar);`
  * Invalid: `int getFoo();` + `String getFoo();` <- "foo" is already registered for type int
  * Also invalid: `int getFoo();` + `void setFoo(String bar)`;
 * Valid types are: `int`, `long`, `float`, `boolean` and `String`
