@@ -1,4 +1,8 @@
 apply plugin: 'java'
+apply plugin: 'maven-publish'
+apply plugin: 'com.jfrog.bintray'
+
+version '0.1.0'
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
@@ -7,4 +11,54 @@ dependencies {
   compile 'com.google.android:android:4.1.1.4'
 
   testCompile 'junit:junit:4.12'
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+  classifier = 'sources'
+  from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+  classifier = 'javadoc'
+  from javadoc.destinationDir
+}
+
+artifacts {
+  archives sourcesJar, javadocJar
+}
+
+publishing {
+  publications {
+    mavenJava(MavenPublication) {
+      from components.java
+      artifact sourcesJar
+      artifact javadocJar
+      groupId 'de.ad'
+      artifactId 'sharp-api'
+      version project.version
+    }
+  }
+}
+
+bintray {
+  user = project.hasProperty('bintray_user') ? bintray_user : ''
+  key = project.hasProperty('bintray_key') ? bintray_key : ''
+  publications = ['mavenJava']
+  dryRun = false
+  publish = false
+  pkg {
+    repo = 'maven'
+    name = 'de.ad:sharp-api'
+    desc = 'An annotation based SharedPreferences wrapper.'
+    websiteUrl = 'https://github.com/a11n/sharp'
+    issueTrackerUrl = 'https://github.com/a11n/sharp/issues'
+    vcsUrl = 'https://github.com/a11n/sharp.git'
+    licenses = ['MIT']
+    labels = ['Android', 'SharedPreferences', 'Annotation', 'Annotation Processor']
+    publicDownloadNumbers = false
+    version {
+      name = project.version
+      desc = ''
+    }
+  }
 }
