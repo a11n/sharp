@@ -54,6 +54,8 @@ SharP uses annotation processing and a couple of conventions to generate the boi
 This is what you need to specify:
 
 ```java
+package my.package;
+
 @SharedPreference
 interface LocalStorage{
   String getMyStringPreference();
@@ -72,7 +74,7 @@ public final class LocalStorageImpl implements LocalStorage {
 
   public LocalStorageImpl(Context context) {
     this.sharedPreferences =
-      context.getSharedPreferences("LocalStorageImpl", Context.MODE_PRIVATE);
+      context.getSharedPreferences("my.package.LocalStorage", Context.MODE_PRIVATE);
     this.editor = this.sharedPreferences.edit();
   }
 
@@ -102,7 +104,7 @@ public final class LocalStorageImpl implements LocalStorage {
 In order to be lightweight and convenient SharP is designed according to the [Convention over Configuration paradigm](https://en.wikipedia.org/wiki/Convention_over_configuration).
 
 ###Conventions
-* The `interface` name is used as filename to store your key-value-pairs
+* The fully qualified `interface` name is used as unique filename to store your key-value-pairs
 * Getters are required to:
  * start with `get`
  * have no parameters and
