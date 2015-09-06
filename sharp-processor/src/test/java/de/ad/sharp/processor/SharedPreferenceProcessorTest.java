@@ -17,7 +17,7 @@ public class SharedPreferenceProcessorTest {
             "   void setLongPreference(long value);", "   float getFloatPreference();",
             "   void setFloatPreference(float value);", "   boolean getBooleanPreference();",
             "   void setBooleanPreference(boolean value);", "   String getStringPreference();",
-            "   void setStringPreference(String value);", "}"));
+            "   void setStringPreference(String value);", "void reset();", "}"));
 
     JavaFileObject expectedSource = JavaFileObjects.forSourceString("LocalStorageImpl",
         Joiner.on('\n')
@@ -117,5 +117,27 @@ public class SharedPreferenceProcessorTest {
         .processedWith(new SharedPreferenceProcessor())
         .failsToCompile()
         .withErrorContaining(SharedPreferenceImpl.ILLEGAL_SETTER_RETURN_TYPE);
+  }
+
+  @Test public void shouldFailWithIllegalResetParameterCount() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("LocalStorage", Joiner.on('\n')
+        .join("package test;", "import de.ad.sharp.api.SharedPreference;",
+            "@SharedPreference public interface LocalStorage {", "   void reset(int value);", "}"));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new SharedPreferenceProcessor())
+        .failsToCompile()
+        .withErrorContaining(SharedPreferenceImpl.ILLEGAL_RESET_PARAMETER_COUNT);
+  }
+
+  @Test public void shouldFailWithIllegalResetReturnType() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("LocalStorage", Joiner.on('\n')
+        .join("package test;", "import de.ad.sharp.api.SharedPreference;",
+            "@SharedPreference public interface LocalStorage {", "   boolean reset();", "}"));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new SharedPreferenceProcessor())
+        .failsToCompile()
+        .withErrorContaining(SharedPreferenceImpl.ILLEGAL_RESET_RETURN_TYPE);
   }
 }

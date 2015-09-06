@@ -38,6 +38,8 @@ public class SharedPreferenceImpl {
   static final String ILLEGAL_SETTER_PARAMETER_TYPE =
       "This is not a valid parameter type for setters.";
   static final String ILLEGAL_SETTER_RETURN_TYPE = "Setters are supposed to return void.";
+  static final String ILLEGAL_RESET_PARAMETER_COUNT = "reset() is not allowed to have parameters.";
+  static final String ILLEGAL_RESET_RETURN_TYPE = "This is not a valid return type for reset().";
 
   private final TypeSpec typeSpec;
   private final Collection<FieldSpec> fields;
@@ -130,6 +132,8 @@ public class SharedPreferenceImpl {
       return generateGetter(name, parameters, returnType);
     } else if (name.startsWith("set")) {
       return generateSetter(name, parameters, returnType);
+    } else if ("reset".equals(name)) {
+      return generateReset(parameters, returnType);
     } else {
       throw illegalArgument(ILLEGAL_MESSAGE_NAME);
     }
@@ -230,6 +234,20 @@ public class SharedPreferenceImpl {
       throw illegalArgument(ILLEGAL_SETTER_PARAMETER_TYPE);
     } else if (!TypeName.VOID.equals(returnType)) {
       throw illegalArgument(ILLEGAL_SETTER_RETURN_TYPE);
+    }
+  }
+
+  private CodeBlock generateReset(List<ParameterSpec> parameters, TypeName returnType) {
+    verifyResetDeclaration(parameters, returnType);
+
+    return CodeBlock.builder().addStatement("editor.clear().apply()").build();
+  }
+
+  private void verifyResetDeclaration(List<ParameterSpec> parameters, TypeName returnType) {
+    if (parameters.size() > 0) {
+      throw illegalArgument(ILLEGAL_RESET_PARAMETER_COUNT);
+    } else if (!TypeName.VOID.equals(returnType)) {
+      throw illegalArgument(ILLEGAL_RESET_RETURN_TYPE);
     }
   }
 
