@@ -54,7 +54,7 @@ public class SharedPreferenceImpl {
     String className = annotatedInterface.getSimpleName() + "Impl";
     ClassName interfaceName = ClassName.get(annotatedInterface);
     fields = new ArrayList<>();
-    MethodSpec constructor = generateConstructor(className);
+    MethodSpec constructor = generateConstructor(annotatedInterface.getQualifiedName().toString());
     Iterable<MethodSpec> methods = generateMethodsOf(annotatedInterface);
 
     typeSpec = TypeSpec.classBuilder(className)
@@ -72,7 +72,7 @@ public class SharedPreferenceImpl {
     }
   }
 
-  private MethodSpec generateConstructor(String className) {
+  private MethodSpec generateConstructor(String fullyQualifiedName) {
     ClassName context = ClassName.bestGuess("android.content.Context");
     ClassName sharedPreferences = ClassName.bestGuess("android.content.SharedPreferences");
     ClassName editor = ClassName.bestGuess("android.content.SharedPreferences.Editor");
@@ -88,7 +88,7 @@ public class SharedPreferenceImpl {
 
     CodeBlock code = CodeBlock.builder()
         .addStatement("$L = $L.$L($S, $L)", "this.sharedPreferences", "context",
-            "getSharedPreferences", className, "Context.MODE_PRIVATE")
+            "getSharedPreferences", fullyQualifiedName, "Context.MODE_PRIVATE")
         .addStatement("$L = $L", "this.editor", "this.sharedPreferences.edit()")
         .build();
 
