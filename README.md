@@ -48,27 +48,10 @@ dependencies {
 }
 ```
 
-##Motivation
-Android features [a couple of data storage options](http://developer.android.com/guide/topics/data/data-storage.html). One of them is [SharedPreferences](http://developer.android.com/guide/topics/data/data-storage.html#pref):
->The SharedPreferences class provides a general framework that allows you to save and retrieve persistent key-value pairs of primitive data types.
+##Code Generation
+SharP uses annotation processing and a couple of conventions to generate the boilerplate code for you.
 
-When using `SharedPreferences` you will most commonly end up to manage **a variety of keys** on your own and write **a lot of code which looks like this:**
-
-```java
-SharedPreferences sharedPreferences = context.getSharedPreferences("my_prefs", MODE_PRIVATE);
-SharedPreferences.Editor editor = sharedPreferences.edit();
-
-String myStringPreference = sharedPreferences.getString("my_string_preferences", null);
-int myIntPreference = sharedPreferences.getInt("my_int_preferences", 0);
-...
-
-editor.putString("my_string_preference", "FooBar").apply();
-editor.putInt("my_int_preference", 42).apply();
-...
-
-```
-
-SharP aims to solve this problem. It uses [annotation processing](http://docs.oracle.com/javase/7/docs/api/javax/annotation/processing/Processor.html) to generate the boilerplate code for you. The only thing you need to specify is a clean `interface` and annotate it to be a `@SharedPreference`:
+This is what you need to specify:
 
 ```java
 @SharedPreference
@@ -80,11 +63,39 @@ interface LocalStorage{
 }
 ```
 
-Wherever you need to access your persistent data just grab an instance of your `LocalStorage` using SharP (ideally you do this once in your `Application` class):
+...and this is what SharP generates for you:
 
 ```java
-LocalStorage storage = SharP.load(context, LocalStorage.class);
-String myStringPreference = storage.getMyStringPreference();
+public final class LocalStorageImpl implements LocalStorage {
+  private final SharedPreferences sharedPreferences;
+  private final SharedPreferences.Editor editor;
+
+  public LocalStorageImpl(Context context) {
+    this.sharedPreferences =
+      context.getSharedPreferences("LocalStorageImpl", Context.MODE_PRIVATE);
+    this.editor = this.sharedPreferences.edit();
+  }
+
+  @Override
+  public final String getMyStringPreference() {
+    return sharedPreferences.getString("my_string_preference", null);
+  }
+
+  @Override
+  public final void setMyStringPreference(String value) {
+    editor.putString("my_string_preference", value).apply();
+  }
+
+  @Override
+  public final int getMyIntPreference() {
+    return sharedPreferences.getInt("my_int_preference", 0);
+  }
+
+  @Override
+  public final void setMyIntPreference(int value) {
+    editor.putInt("my_int_preference", value).apply();
+  }
+}
 ```
 
 ##Principles
@@ -102,9 +113,8 @@ In order to be lightweight and convenient SharP is designed according to the [Co
  * have exactly one parameter of a *valid type*
  * must return `void`
  * Example: `void setMyStringPreference(String value);`
-* Property names have to be unique for the same type
- * The method name is formatted to underscore notation and used as key (Example: `getMyStringPreference() -> key: my_string_preference`)
- * Valid: `int getFoo();` + `void setFoo(int bar);`
- * Invalid: `int getFoo();` + `String getFoo();` <- "foo" is already registered for type int
- * Also invalid: `int getFoo();` + `void setFoo(String bar)`;
+* Each getters needs a corresponding setter
+ * Example: `int getMyIntPreference()` requires declaration of `void setMyIntPreference(int value)`
 * Valid types are: `int`, `long`, `float`, `boolean` and `String`
+* If a value has not been set yet, [Java's default values](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html) are returned according to its type
+* The declaration of `void reset()` in your interface will result in a special implementation which calls `editor.clear().apply()`
