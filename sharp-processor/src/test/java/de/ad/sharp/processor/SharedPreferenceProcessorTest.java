@@ -140,4 +140,34 @@ public class SharedPreferenceProcessorTest {
         .failsToCompile()
         .withErrorContaining(SharedPreferenceImpl.ILLEGAL_RESET_RETURN_TYPE);
   }
+
+  @Test public void shouldFailWithIllegalNoSetterForGetter() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("LocalStorage", Joiner.on('\n')
+        .join("package test;", "import de.ad.sharp.api.SharedPreference;",
+            "@SharedPreference public interface LocalStorage {", "   int getIntPreference();",
+            "}"));
+
+    String expectedError =
+        String.format(SharedPreferenceImpl.ILLEGAL_NO_SETTER_FOR_GETTER, "getIntPreference");
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new SharedPreferenceProcessor())
+        .failsToCompile()
+        .withErrorContaining(expectedError);
+  }
+
+  @Test public void shouldFailWithIllegalNoGetterForSetter() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("LocalStorage", Joiner.on('\n')
+        .join("package test;", "import de.ad.sharp.api.SharedPreference;",
+            "@SharedPreference public interface LocalStorage {",
+            "   void setIntPreference(int value);", "}"));
+
+    String expectedError =
+        String.format(SharedPreferenceImpl.ILLEGAL_NO_GETTER_FOR_SETTER, "setIntPreference");
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new SharedPreferenceProcessor())
+        .failsToCompile()
+        .withErrorContaining(expectedError);
+  }
 }

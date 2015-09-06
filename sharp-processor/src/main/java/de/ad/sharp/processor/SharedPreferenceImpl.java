@@ -11,7 +11,9 @@ import com.squareup.javapoet.TypeSpec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -40,6 +42,10 @@ public class SharedPreferenceImpl {
   static final String ILLEGAL_SETTER_RETURN_TYPE = "Setters are supposed to return void.";
   static final String ILLEGAL_RESET_PARAMETER_COUNT = "reset() is not allowed to have parameters.";
   static final String ILLEGAL_RESET_RETURN_TYPE = "This is not a valid return type for reset().";
+  static final String ILLEGAL_NO_SETTER_FOR_GETTER =
+      "Getter '%s()' has no corresponding setter declaration.";
+  static final String ILLEGAL_NO_GETTER_FOR_SETTER =
+      "Setter '%s()' has no corresponding getter declaration.";
 
   private final TypeSpec typeSpec;
   private final Collection<FieldSpec> fields;
@@ -55,7 +61,9 @@ public class SharedPreferenceImpl {
     ClassName interfaceName = ClassName.get(annotatedInterface);
     fields = new ArrayList<>();
     MethodSpec constructor = generateConstructor(annotatedInterface.getQualifiedName().toString());
-    Iterable<MethodSpec> methods = generateMethodsOf(annotatedInterface);
+    Collection<MethodSpec> methods = generateMethodsOf(annotatedInterface);
+
+    verifyEachGetterHasSetter(methods);
 
     typeSpec = TypeSpec.classBuilder(className)
         .addSuperinterface(interfaceName)
@@ -69,6 +77,32 @@ public class SharedPreferenceImpl {
   private void verifyArgumentIsInterface(TypeElement annotatedType) {
     if (annotatedType.getKind() != ElementKind.INTERFACE) {
       throw illegalArgument(ILLEGAL_TYPE);
+    }
+  }
+
+  private void verifyEachGetterHasSetter(Collection<MethodSpec> methods) {
+    Map<String, String> getters = new HashMap<>(methods.size() / 2);
+    Map<String, String> setters = new HashMap<>(methods.size() / 2);
+
+    for (MethodSpec method : methods) {
+      String name = method.name;
+      if (name.startsWith("get")) {
+        getters.put(computeKeyForMethod(name), name);
+      } else if (name.startsWith("set")) {
+        setters.put(computeKeyForMethod(name), name);
+      }
+    }
+
+    for (String key : getters.keySet()) {
+      if (!setters.containsKey(key)) {
+        throw illegalArgument(ILLEGAL_NO_SETTER_FOR_GETTER, getters.get(key));
+      } else {
+        setters.remove(key);
+      }
+    }
+
+    if (!setters.isEmpty()) {
+      throw illegalArgument(ILLEGAL_NO_GETTER_FOR_SETTER, setters.values().iterator().next());
     }
   }
 
@@ -99,7 +133,7 @@ public class SharedPreferenceImpl {
         .build();
   }
 
-  private Iterable<MethodSpec> generateMethodsOf(TypeElement annotatedInterface) {
+  private Collection<MethodSpec> generateMethodsOf(TypeElement annotatedInterface) {
     List<MethodSpec> methodSpecs = new ArrayList<>();
 
     Iterable<ExecutableElement> methods = getMethodsOf(annotatedInterface);
