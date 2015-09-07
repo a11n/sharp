@@ -13,10 +13,10 @@ interface LocalStorage{
 }
 ```
 
-...then load its auto-generated implementation using `SharP`:
+...then instantiate its auto-generated implementation using `SharP`:
 
 ```java
-LocalStorage storage = SharP.load(context, LocalStorage.class);
+LocalStorage storage = SharP.getInstance(context, LocalStorage.class);
 
 String myStringPreference = storage.getMyStringPreference();
 int myIntPreference = storage.getMyIntPreference();
