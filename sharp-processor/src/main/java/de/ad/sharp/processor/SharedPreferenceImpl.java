@@ -35,6 +35,10 @@ public class SharedPreferenceImpl {
   static final String ILLEGAL_GETTER_PARAMETER_COUNT =
       "Getters are not allowed to have parameters.";
   static final String ILLEGAL_GETTER_RETURN_TYPE = "This is not a valid return type for getters.";
+  static final String ILLEGAL_BOOLEAN_GETTER_MESSAGE_NAME =
+      "Boolean getters are supposed to start with 'is'.";
+  static final String ILLEGAL_BOOLEAN_GETTER_RETURN_TYPE =
+      "Method names starting with is are reserved for boolean getters.";
   static final String ILLEGAL_SETTER_PARAMETER_COUNT =
       "Setters are supposed to have exactly one parameter.";
   static final String ILLEGAL_SETTER_PARAMETER_TYPE =
@@ -86,7 +90,7 @@ public class SharedPreferenceImpl {
 
     for (MethodSpec method : methods) {
       String name = method.name;
-      if (name.startsWith("get")) {
+      if (name.startsWith("get") || name.startsWith("is")) {
         getters.put(computeKeyForMethod(name), name);
       } else if (name.startsWith("set")) {
         setters.put(computeKeyForMethod(name), name);
@@ -162,7 +166,7 @@ public class SharedPreferenceImpl {
   }
 
   private CodeBlock generateCode(String name, List<ParameterSpec> parameters, TypeName returnType) {
-    if (name.startsWith("get")) {
+    if (name.startsWith("get") || name.startsWith("is")) {
       return generateGetter(name, parameters, returnType);
     } else if (name.startsWith("set")) {
       return generateSetter(name, parameters, returnType);
@@ -175,7 +179,7 @@ public class SharedPreferenceImpl {
 
   private CodeBlock generateGetter(String name, List<ParameterSpec> parameters,
       TypeName returnType) {
-    verifyGetterDeclaration(parameters, returnType);
+    verifyGetterDeclaration(name, parameters, returnType);
 
     String getterName = computeGetterNameFor(returnType);
     String key = computeKeyForMethod(name);
@@ -187,7 +191,9 @@ public class SharedPreferenceImpl {
   }
 
   private String computeKeyForMethod(String name) {
-    if (name.startsWith("get") || name.startsWith("set")) name = name.substring(3);
+    if (name.startsWith("get") || name.startsWith("set")) {
+      name = name.substring(3);
+    } else if (name.startsWith("is")) name = name.substring(2);
 
     return camelToUnderscore(name);
   }
@@ -233,11 +239,16 @@ public class SharedPreferenceImpl {
     throw new IllegalArgumentException();
   }
 
-  private void verifyGetterDeclaration(List<ParameterSpec> parameters, TypeName returnType) {
+  private void verifyGetterDeclaration(String name, List<ParameterSpec> parameters,
+      TypeName returnType) {
     if (parameters.size() > 0) {
       throw illegalArgument(ILLEGAL_GETTER_PARAMETER_COUNT);
     } else if (!isValid(returnType)) {
       throw illegalArgument(ILLEGAL_GETTER_RETURN_TYPE);
+    } else if (TypeName.BOOLEAN.equals(returnType) && !name.startsWith("is")) {
+      throw illegalArgument(ILLEGAL_BOOLEAN_GETTER_MESSAGE_NAME);
+    } else if (name.startsWith("is") && !TypeName.BOOLEAN.equals(returnType)) {
+      throw illegalArgument(ILLEGAL_BOOLEAN_GETTER_RETURN_TYPE);
     }
   }
 

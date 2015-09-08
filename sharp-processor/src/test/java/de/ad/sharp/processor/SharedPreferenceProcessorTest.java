@@ -15,7 +15,7 @@ public class SharedPreferenceProcessorTest {
             "@SharedPreference public interface LocalStorage {", "   int getIntPreference();",
             "   void setIntPreference(int value);", "   long getLongPreference();",
             "   void setLongPreference(long value);", "   float getFloatPreference();",
-            "   void setFloatPreference(float value);", "   boolean getBooleanPreference();",
+            "   void setFloatPreference(float value);", "   boolean isBooleanPreference();",
             "   void setBooleanPreference(boolean value);", "   String getStringPreference();",
             "   void setStringPreference(String value);", "void reset();", "}"));
 
@@ -81,6 +81,29 @@ public class SharedPreferenceProcessorTest {
         .processedWith(new SharedPreferenceProcessor())
         .failsToCompile()
         .withErrorContaining(SharedPreferenceImpl.ILLEGAL_GETTER_RETURN_TYPE);
+  }
+
+  @Test public void shouldFailWithIllegalBooleanGetterMessageName() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("LocalStorage", Joiner.on('\n')
+        .join("package test;", "import de.ad.sharp.api.SharedPreference;",
+            "@SharedPreference public interface LocalStorage {", "   boolean getIntPreference();",
+            "}"));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new SharedPreferenceProcessor())
+        .failsToCompile()
+        .withErrorContaining(SharedPreferenceImpl.ILLEGAL_BOOLEAN_GETTER_MESSAGE_NAME);
+  }
+
+  @Test public void shouldFailWithIllegalBooleanGetterReturnType() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("LocalStorage", Joiner.on('\n')
+        .join("package test;", "import de.ad.sharp.api.SharedPreference;",
+            "@SharedPreference public interface LocalStorage {", "   int isIntPreference();", "}"));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new SharedPreferenceProcessor())
+        .failsToCompile()
+        .withErrorContaining(SharedPreferenceImpl.ILLEGAL_BOOLEAN_GETTER_RETURN_TYPE);
   }
 
   @Test public void shouldFailWithIllegalSetterParameterCount() throws Exception {
