@@ -1,4 +1,4 @@
-#SharP [![Build Status](https://travis-ci.org/a11n/sharp.svg?branch=master)](https://travis-ci.org/a11n/sharp) [![Coverage Status](https://coveralls.io/repos/a11n/sharp/badge.svg?branch=master&service=github)](https://coveralls.io/github/a11n/sharp?branch=master)
+#SharP [![Build Status](https://travis-ci.org/a11n/sharp.svg?branch=master)](https://travis-ci.org/a11n/sharp) [![Coverage Status](https://coveralls.io/repos/a11n/sharp/badge.svg?branch=master&service=github)](https://coveralls.io/github/a11n/sharp?branch=master) [ ![Download](https://api.bintray.com/packages/a11n/maven/de.ad%3Asharp-api/images/download.svg) ](https://bintray.com/a11n/maven/de.ad%3Asharp-api/_latestVersion)
 
 SharP wraps your **Shar**ed**P**references into a clean, type-safe Java interface. It uses annotation processing to generate the boilerplate code for you.
 
@@ -25,8 +25,6 @@ storage.setMyStringPreference("FooBar");
 storage.setMyIntPreference(42);
 ```
 That's it. No struggling with keys anymore.
-
-**!!! This library is still under development. !!!**
 
 ##Usage
 SharP is available via `jcenter()`. The [android-apt](https://bitbucket.org/hvisser/android-apt) plugin is used to setup SharP as annotation processor in Android Studio.
