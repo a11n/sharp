@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
  *     void setMyStringPreference(String value);
  *   }
  * </code></pre>
- * ...the following code is auto-generated:
+ * ...the following code will be auto-generated:
  * <pre><code>
  *   public final class LocalStorageImpl implements LocalStorage {
  *     private final SharedPreferences sharedPreferences;
