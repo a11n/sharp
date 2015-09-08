@@ -1,18 +1,23 @@
 language: java
 
 jdk:
-  - oraclejdk8
+- oraclejdk8
 
 after_success:
-  - ./gradlew jacocoTestReport coveralls
+- ./gradlew jacocoTestReport coveralls javadoc
+- .travis/push-javadoc-to-gh-pages.sh
+
+env:
+  global:
+    secure: GJEFt/4XCpWVUO/RUugrfpTw91X4kThEKE/AE9wwhskcjsosf6Knay82WrO3S8Fo2MgkIbr9Yqu89wGw/PR+NIFW/3f84XBrzhfKJ92u6wj5smogv501oPAy+9HfGdA2HvGeJPXVlzBxsY/dp/TaHM0YRbuzPgXHL2YRgmPPl3ctztpadGDVYXTrkwUmTnixlYHvOBAvq+zjJrU1UL0zxyDpTQomQtnftjfZXK+8wWQkcrBDHVzWpwoZa13OtBKUQ04iRyIQmf69Chl6xbRhfwNTS9hMNcOH5ayei4slwF8a6xy07vJrLl8cBZeHfGR7WgcvKrb9tKPvDtilcIX31AYuUbxCCYdnMoVVnF2AW97JnZlDpEqYtx+LUgXacrEEDTCBy8lDUPbEp3YPyY7zFmVY88WNqfoeVECpKV0i3Hgwd0ZcPX1AvtCpkO5I7tIMxi4KrC5NYaeABXNTZwzv+1Pieqtwk1sMsKciOKEa3cdeiJTfrM8YSgVDG9aZ4pCRKpoPHULNWy3IqqTGha5h60ro65EeqHrc4CuuxFXve6H55+rOCmTcnCl2inm4+inJ0zaWw0mepDv2ZX7G9vmdhY7exPpenk3bS6IQKLh7Tf9fS/KppqzEKv/rQu6ygM8O1Wavg1mTNKC11e/TBsB4jAgvxiJHnUEE9fgDK0dCRDU=
 
 branches:
   except:
-    - gh-pages
+  - gh-pages
 
 notifications:
   email: false
 
 cache:
   directories:
-    - $HOME/.gradle
+  - $HOME/.gradle
