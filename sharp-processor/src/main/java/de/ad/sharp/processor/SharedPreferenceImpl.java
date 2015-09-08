@@ -78,37 +78,11 @@ final class SharedPreferenceImpl {
         .build();
   }
 
-  private void verifyArgumentIsInterface(TypeElement annotatedType) {
-    if (annotatedType.getKind() != ElementKind.INTERFACE) {
-      throw illegalArgument(ILLEGAL_TYPE);
-    }
+  public JavaFile toJavaIn(String packageName) {
+    return JavaFile.builder(packageName, typeSpec).addFileComment(FILE_COMMENT).build();
   }
 
-  private void verifyEachGetterHasSetter(Collection<MethodSpec> methods) {
-    Map<String, String> getters = new HashMap<>(methods.size() / 2);
-    Map<String, String> setters = new HashMap<>(methods.size() / 2);
-
-    for (MethodSpec method : methods) {
-      String name = method.name;
-      if (name.startsWith("get") || name.startsWith("is")) {
-        getters.put(computeKeyForMethod(name), name);
-      } else if (name.startsWith("set")) {
-        setters.put(computeKeyForMethod(name), name);
-      }
-    }
-
-    for (String key : getters.keySet()) {
-      if (!setters.containsKey(key)) {
-        throw illegalArgument(ILLEGAL_NO_SETTER_FOR_GETTER, getters.get(key));
-      } else {
-        setters.remove(key);
-      }
-    }
-
-    if (!setters.isEmpty()) {
-      throw illegalArgument(ILLEGAL_NO_GETTER_FOR_SETTER, setters.values().iterator().next());
-    }
-  }
+  //generation
 
   private MethodSpec generateConstructor(String fullyQualifiedName) {
     ClassName context = ClassName.bestGuess("android.content.Context");
@@ -190,68 +164,6 @@ final class SharedPreferenceImpl {
         .build();
   }
 
-  private String computeKeyForMethod(String name) {
-    if (name.startsWith("get") || name.startsWith("set")) {
-      name = name.substring(3);
-    } else if (name.startsWith("is")) name = name.substring(2);
-
-    return camelToUnderscore(name);
-  }
-
-  private String camelToUnderscore(String name) {
-    StringBuilder builder = new StringBuilder(name.length() * 2);
-
-    builder.append(Character.toLowerCase(name.charAt(0)));
-    for (int i = 1; i < name.length(); i++) {
-      char charAt = name.charAt(i);
-      if (Character.isUpperCase(charAt)) builder.append('_');
-      builder.append(Character.toLowerCase(charAt));
-    }
-
-    return builder.toString();
-  }
-
-  private String computeGetterNameFor(TypeName returnType) {
-    String type = returnType.toString();
-    //java.lang.String -> String
-    type = type.contains(".") ? type.substring(type.lastIndexOf(".") + 1) : type;
-    return "get" + capitalize(type);
-  }
-
-  private String capitalize(String string) {
-    return string.substring(0, 1).toUpperCase() + string.substring(1);
-  }
-
-  private String getDefaultValueFor(TypeName returnType) {
-    switch (returnType.toString()) {
-      case "java.lang.String":
-        return "null";
-      case "int":
-        return "0";
-      case "long":
-        return "0";
-      case "float":
-        return "0.0f";
-      case "boolean":
-        return "false";
-    }
-
-    throw new IllegalArgumentException();
-  }
-
-  private void verifyGetterDeclaration(String name, List<ParameterSpec> parameters,
-      TypeName returnType) {
-    if (parameters.size() > 0) {
-      throw illegalArgument(ILLEGAL_GETTER_PARAMETER_COUNT);
-    } else if (!isValid(returnType)) {
-      throw illegalArgument(ILLEGAL_GETTER_RETURN_TYPE);
-    } else if (TypeName.BOOLEAN.equals(returnType) && !name.startsWith("is")) {
-      throw illegalArgument(ILLEGAL_BOOLEAN_GETTER_MESSAGE_NAME);
-    } else if (name.startsWith("is") && !TypeName.BOOLEAN.equals(returnType)) {
-      throw illegalArgument(ILLEGAL_BOOLEAN_GETTER_RETURN_TYPE);
-    }
-  }
-
   private CodeBlock generateSetter(String name, List<ParameterSpec> parameters,
       TypeName returnType) {
     verifySetterDeclaration(parameters, returnType);
@@ -265,39 +177,10 @@ final class SharedPreferenceImpl {
         .build();
   }
 
-  private String computeSetterNameFor(TypeName parameterType) {
-    String type = parameterType.toString();
-    //java.lang.String -> String
-    type = type.contains(".") ? type.substring(type.lastIndexOf(".") + 1) : type;
-    return "put" + capitalize(type);
-  }
-
-  private void verifySetterDeclaration(List<ParameterSpec> parameters, TypeName returnType) {
-    if (parameters.size() != 1) {
-      throw illegalArgument(ILLEGAL_SETTER_PARAMETER_COUNT);
-    } else if (!isValid(parameters.get(0).type)) {
-      throw illegalArgument(ILLEGAL_SETTER_PARAMETER_TYPE);
-    } else if (!TypeName.VOID.equals(returnType)) {
-      throw illegalArgument(ILLEGAL_SETTER_RETURN_TYPE);
-    }
-  }
-
   private CodeBlock generateReset(List<ParameterSpec> parameters, TypeName returnType) {
     verifyResetDeclaration(parameters, returnType);
 
     return CodeBlock.builder().addStatement("editor.clear().apply()").build();
-  }
-
-  private void verifyResetDeclaration(List<ParameterSpec> parameters, TypeName returnType) {
-    if (parameters.size() > 0) {
-      throw illegalArgument(ILLEGAL_RESET_PARAMETER_COUNT);
-    } else if (!TypeName.VOID.equals(returnType)) {
-      throw illegalArgument(ILLEGAL_RESET_RETURN_TYPE);
-    }
-  }
-
-  private boolean isValid(TypeName type) {
-    return VALID_TYPES.contains(type);
   }
 
   private List<ParameterSpec> generateParametersOf(ExecutableElement method) {
@@ -318,6 +201,97 @@ final class SharedPreferenceImpl {
     return parameters;
   }
 
+  //computation
+
+  private String computeKeyForMethod(String name) {
+    if (name.startsWith("get") || name.startsWith("set")) {
+      name = name.substring(3);
+    } else if (name.startsWith("is")) name = name.substring(2);
+
+    return camelToUnderscore(name);
+  }
+
+  private String computeGetterNameFor(TypeName returnType) {
+    String type = returnType.toString();
+    //java.lang.String -> String
+    type = type.contains(".") ? type.substring(type.lastIndexOf(".") + 1) : type;
+    return "get" + capitalize(type);
+  }
+
+  private String computeSetterNameFor(TypeName parameterType) {
+    String type = parameterType.toString();
+    //java.lang.String -> String
+    type = type.contains(".") ? type.substring(type.lastIndexOf(".") + 1) : type;
+    return "put" + capitalize(type);
+  }
+
+  //verification
+
+  private void verifyArgumentIsInterface(TypeElement annotatedType) {
+    if (annotatedType.getKind() != ElementKind.INTERFACE) {
+      throw illegalArgument(ILLEGAL_TYPE);
+    }
+  }
+
+  private void verifyEachGetterHasSetter(Collection<MethodSpec> methods) {
+    Map<String, String> getters = new HashMap<>(methods.size() / 2);
+    Map<String, String> setters = new HashMap<>(methods.size() / 2);
+
+    for (MethodSpec method : methods) {
+      String name = method.name;
+      if (name.startsWith("get") || name.startsWith("is")) {
+        getters.put(computeKeyForMethod(name), name);
+      } else if (name.startsWith("set")) {
+        setters.put(computeKeyForMethod(name), name);
+      }
+    }
+
+    for (String key : getters.keySet()) {
+      if (!setters.containsKey(key)) {
+        throw illegalArgument(ILLEGAL_NO_SETTER_FOR_GETTER, getters.get(key));
+      } else {
+        setters.remove(key);
+      }
+    }
+
+    if (!setters.isEmpty()) {
+      throw illegalArgument(ILLEGAL_NO_GETTER_FOR_SETTER, setters.values().iterator().next());
+    }
+  }
+
+  private void verifyGetterDeclaration(String name, List<ParameterSpec> parameters,
+      TypeName returnType) {
+    if (parameters.size() > 0) {
+      throw illegalArgument(ILLEGAL_GETTER_PARAMETER_COUNT);
+    } else if (!isValid(returnType)) {
+      throw illegalArgument(ILLEGAL_GETTER_RETURN_TYPE);
+    } else if (TypeName.BOOLEAN.equals(returnType) && !name.startsWith("is")) {
+      throw illegalArgument(ILLEGAL_BOOLEAN_GETTER_MESSAGE_NAME);
+    } else if (name.startsWith("is") && !TypeName.BOOLEAN.equals(returnType)) {
+      throw illegalArgument(ILLEGAL_BOOLEAN_GETTER_RETURN_TYPE);
+    }
+  }
+
+  private void verifySetterDeclaration(List<ParameterSpec> parameters, TypeName returnType) {
+    if (parameters.size() != 1) {
+      throw illegalArgument(ILLEGAL_SETTER_PARAMETER_COUNT);
+    } else if (!isValid(parameters.get(0).type)) {
+      throw illegalArgument(ILLEGAL_SETTER_PARAMETER_TYPE);
+    } else if (!TypeName.VOID.equals(returnType)) {
+      throw illegalArgument(ILLEGAL_SETTER_RETURN_TYPE);
+    }
+  }
+
+  private void verifyResetDeclaration(List<ParameterSpec> parameters, TypeName returnType) {
+    if (parameters.size() > 0) {
+      throw illegalArgument(ILLEGAL_RESET_PARAMETER_COUNT);
+    } else if (!TypeName.VOID.equals(returnType)) {
+      throw illegalArgument(ILLEGAL_RESET_RETURN_TYPE);
+    }
+  }
+
+  // type utils
+
   private Iterable<ExecutableElement> getMethodsOf(TypeElement annotatedInterface) {
     List<ExecutableElement> methods = new ArrayList<>();
 
@@ -328,8 +302,44 @@ final class SharedPreferenceImpl {
     return methods;
   }
 
-  public JavaFile toJavaIn(String packageName) {
-    return JavaFile.builder(packageName, typeSpec).addFileComment(FILE_COMMENT).build();
+  private boolean isValid(TypeName type) {
+    return VALID_TYPES.contains(type);
+  }
+
+  private String getDefaultValueFor(TypeName returnType) {
+    switch (returnType.toString()) {
+      case "java.lang.String":
+        return "null";
+      case "int":
+        return "0";
+      case "long":
+        return "0";
+      case "float":
+        return "0.0f";
+      case "boolean":
+        return "false";
+    }
+
+    throw new IllegalArgumentException();
+  }
+
+  //utils
+
+  private String camelToUnderscore(String name) {
+    StringBuilder builder = new StringBuilder(name.length() * 2);
+
+    builder.append(Character.toLowerCase(name.charAt(0)));
+    for (int i = 1; i < name.length(); i++) {
+      char charAt = name.charAt(i);
+      if (Character.isUpperCase(charAt)) builder.append('_');
+      builder.append(Character.toLowerCase(charAt));
+    }
+
+    return builder.toString();
+  }
+
+  private String capitalize(String string) {
+    return string.substring(0, 1).toUpperCase() + string.substring(1);
   }
 
   private IllegalArgumentException illegalArgument(String message, Object... args) {
