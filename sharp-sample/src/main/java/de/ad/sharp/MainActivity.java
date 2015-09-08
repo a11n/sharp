@@ -13,7 +13,7 @@ public class MainActivity extends AppCompatActivity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
-    LocalStorage localStorage = SharP.load(this, LocalStorage.class);
+    LocalStorage localStorage = SharP.getInstance(this, LocalStorage.class);
     localStorage.setStringPreference("Hello @SharP!");
 
     ((TextView) findViewById(R.id.textView)).setText(localStorage.getStringPreference());
