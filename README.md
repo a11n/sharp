@@ -104,12 +104,23 @@ public final class LocalStorageImpl implements LocalStorage {
 In order to be lightweight and convenient SharP is designed according to the [Convention over Configuration paradigm](https://en.wikipedia.org/wiki/Convention_over_configuration).
 
 ###Conventions
+####Interface
 * The fully qualified `interface` name is used as unique filename to store your key-value-pairs
+* The `SharedPreferences` are always stored in `MODE_PRIVATE`
+* Only top-level interfaces are supported
+
+####Properties
+* [JavaBean naming conventions](https://en.wikipedia.org/wiki/JavaBeans#JavaBean_conventions) are applied
 * Getters are required to:
  * start with `get`
  * have no parameters and
  * must return a *valid type*
  * Example: `String getMyStringPreference();`
+* Boolean getters are required to:
+ * start with `is`
+ * have no parameters and
+ * must return `boolean`
+ * Example: `boolean getMyBooleanPreference();`
 * Setters are required:
  * to start with `set`
  * have exactly one parameter of a *valid type*
@@ -117,6 +128,12 @@ In order to be lightweight and convenient SharP is designed according to the [Co
  * Example: `void setMyStringPreference(String value);`
 * Each getters needs a corresponding setter
  * Example: `int getMyIntPreference()` requires declaration of `void setMyIntPreference(int value)`
+
+####Valid types
 * Valid types are: `int`, `long`, `float`, `boolean` and `String`
+
+####Default values
 * If a value has not been set yet, [Java's default values](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html) are returned according to its type
+
+####Specialities
 * The declaration of `void reset()` in your interface will result in a special implementation which calls `editor.clear().apply()`
