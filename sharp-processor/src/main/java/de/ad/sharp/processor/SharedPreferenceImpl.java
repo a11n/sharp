@@ -22,7 +22,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
-public class SharedPreferenceImpl {
+final class SharedPreferenceImpl {
   private static final List<TypeName> VALID_TYPES =
       Arrays.asList(TypeName.INT, TypeName.LONG, TypeName.FLOAT, TypeName.BOOLEAN,
           ClassName.bestGuess("java.lang.String"));
