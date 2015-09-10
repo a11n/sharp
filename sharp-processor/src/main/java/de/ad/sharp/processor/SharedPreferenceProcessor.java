@@ -1,10 +1,12 @@
 package de.ad.sharp.processor;
 
-import com.squareup.javapoet.JavaFile;
+import de.ad.sharp.api.DefaultSharedPreference;
 import de.ad.sharp.api.SharedPreference;
-import java.util.Collections;
+import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
@@ -17,10 +19,15 @@ import static javax.tools.Diagnostic.Kind.ERROR;
 
 public class SharedPreferenceProcessor extends AbstractProcessor {
   private Messager messager;
-  private Elements elements;
+  private Filer filer;
 
   @Override public Set<String> getSupportedAnnotationTypes() {
-    return Collections.singleton(SharedPreference.class.getCanonicalName());
+    Set<String> supportedAnnotationTypes = new HashSet<>(2);
+
+    supportedAnnotationTypes.add(DefaultSharedPreference.class.getCanonicalName());
+    supportedAnnotationTypes.add(SharedPreference.class.getCanonicalName());
+
+    return supportedAnnotationTypes;
   }
 
   @Override public SourceVersion getSupportedSourceVersion() {
@@ -31,30 +38,35 @@ public class SharedPreferenceProcessor extends AbstractProcessor {
     super.init(processingEnv);
 
     messager = processingEnv.getMessager();
-    elements = processingEnv.getElementUtils();
+    filer = processingEnv.getFiler();
   }
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-    for (Element annotatedElement : roundEnv.getElementsAnnotatedWith(SharedPreference.class))
-      process((TypeElement) annotatedElement);
+    try {
+      processAnnotations(roundEnv);
+    } catch (Exception e) {
+      error(e.getMessage());
+    }
 
     return true;
   }
 
-  private void process(TypeElement annotatedType) {
-    String packageName = getPackageNameOf(annotatedType);
+  private void processAnnotations(RoundEnvironment roundEnv) throws IOException {
+    for (Element annotatedElement : roundEnv.getElementsAnnotatedWith(
+        DefaultSharedPreference.class))
+      processDefaultSharedPreference((TypeElement) annotatedElement);
 
-    try {
-      JavaFile javaFile = SharedPreferenceImpl.of(annotatedType).toJavaIn(packageName);
-      javaFile.writeTo(processingEnv.getFiler());
-    } catch(Exception e){
-      error(e.getMessage());
-    }
+    for (Element annotatedElement : roundEnv.getElementsAnnotatedWith(SharedPreference.class))
+      processSharedPreference((TypeElement) annotatedElement);
   }
 
-  private String getPackageNameOf(Element element) {
-    return elements.getPackageOf(element).toString();
+  private void processDefaultSharedPreference(TypeElement annotatedType) throws IOException {
+    DefaultSharedPreferenceImpl.of(annotatedType).writeJavaTo(filer);
+  }
+
+  private void processSharedPreference(TypeElement annotatedType) throws IOException {
+    SharedPreferenceImpl.of(annotatedType).writeJavaTo(filer);
   }
 
   private void error(String message) {
