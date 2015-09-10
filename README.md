@@ -118,7 +118,7 @@ In order to be lightweight and convenient SharP is designed according to the [Co
  * start with `is`
  * have no parameters and
  * must return `boolean`
- * Example: `boolean getMyBooleanPreference();`
+ * Example: `boolean isMyBooleanPreference();`
 * Setters are required:
  * to start with `set`
  * have exactly one parameter of a *valid type*
