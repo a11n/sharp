@@ -36,6 +36,22 @@ public class SharedPreferenceProcessorTest {
     //.and().generatesSources(expectedSource);
   }
 
+  @Test public void shouldCompileDefaultSharedPreferenceWithoutError() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("LocalStorage", Joiner.on('\n')
+        .join("package test;", "import de.ad.sharp.api.DefaultSharedPreference;",
+            "@DefaultSharedPreference public interface LocalStorage {",
+            "   int getIntPreference();", "   void setIntPreference(int value);",
+            "   long getLongPreference();", "   void setLongPreference(long value);",
+            "   float getFloatPreference();", "   void setFloatPreference(float value);",
+            "   boolean isBooleanPreference();", "   void setBooleanPreference(boolean value);",
+            "   String getStringPreference();", "   void setStringPreference(String value);",
+            "void reset();", "}"));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new SharedPreferenceProcessor())
+        .compilesWithoutError();
+  }
+
   @Test public void shouldFailWithIllegalTypeError() throws Exception {
     JavaFileObject source = JavaFileObjects.forSourceString("LocalStorage", Joiner.on('\n')
         .join("package test;", "import de.ad.sharp.api.SharedPreference;",

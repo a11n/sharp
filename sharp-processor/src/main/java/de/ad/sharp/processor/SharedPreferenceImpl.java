@@ -8,6 +8,7 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -15,14 +16,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.processing.Filer;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
-final class SharedPreferenceImpl {
+class SharedPreferenceImpl {
   private static final List<TypeName> VALID_TYPES =
       Arrays.asList(TypeName.INT, TypeName.LONG, TypeName.FLOAT, TypeName.BOOLEAN,
           ClassName.bestGuess("java.lang.String"));
@@ -51,6 +54,7 @@ final class SharedPreferenceImpl {
   static final String ILLEGAL_NO_GETTER_FOR_SETTER =
       "Setter '%s()' has no corresponding getter declaration.";
 
+  private final String packageName;
   private final TypeSpec typeSpec;
   private final Collection<FieldSpec> fields;
 
@@ -58,9 +62,10 @@ final class SharedPreferenceImpl {
     return new SharedPreferenceImpl(annotatedType);
   }
 
-  private SharedPreferenceImpl(TypeElement annotatedInterface) {
+  SharedPreferenceImpl(TypeElement annotatedInterface) {
     verifyArgumentIsInterface(annotatedInterface);
 
+    packageName = getPackageName(annotatedInterface);
     String className = annotatedInterface.getSimpleName() + "Impl";
     ClassName interfaceName = ClassName.get(annotatedInterface);
     fields = new ArrayList<>();
@@ -78,8 +83,8 @@ final class SharedPreferenceImpl {
         .build();
   }
 
-  public JavaFile toJavaIn(String packageName) {
-    return JavaFile.builder(packageName, typeSpec).addFileComment(FILE_COMMENT).build();
+  public final void writeJavaTo(Filer filer) throws IOException {
+    JavaFile.builder(packageName, typeSpec).addFileComment(FILE_COMMENT).build().writeTo(filer);
   }
 
   //generation
@@ -98,16 +103,20 @@ final class SharedPreferenceImpl {
     fields.add(sharedPreferencesField);
     fields.add(editorField);
 
-    CodeBlock code = CodeBlock.builder()
-        .addStatement("$L = $L.$L($S, $L)", "this.sharedPreferences", "context",
-            "getSharedPreferences", fullyQualifiedName, "Context.MODE_PRIVATE")
-        .addStatement("$L = $L", "this.editor", "this.sharedPreferences.edit()")
-        .build();
+    CodeBlock code = generateConstructorCode(fullyQualifiedName);
 
     return MethodSpec.constructorBuilder()
         .addModifiers(Modifier.PUBLIC)
         .addParameter(context, "context")
         .addCode(code)
+        .build();
+  }
+
+  protected CodeBlock generateConstructorCode(String fullyQualifiedName) {
+    return CodeBlock.builder()
+        .addStatement("$L = $L.$L($S, $L)", "this.sharedPreferences", "context",
+            "getSharedPreferences", fullyQualifiedName, "Context.MODE_PRIVATE")
+        .addStatement("$L = $L", "this.editor", "this.sharedPreferences.edit()")
         .build();
   }
 
@@ -128,7 +137,7 @@ final class SharedPreferenceImpl {
     String name = method.getSimpleName().toString();
     List<ParameterSpec> parameters = generateParametersOf(method);
     TypeName returnType = TypeName.get(method.getReturnType());
-    CodeBlock code = generateCode(name, parameters, returnType);
+    CodeBlock code = generateMethodCode(name, parameters, returnType);
 
     return MethodSpec.methodBuilder(name)
         .addAnnotation(Override.class)
@@ -139,7 +148,8 @@ final class SharedPreferenceImpl {
         .build();
   }
 
-  private CodeBlock generateCode(String name, List<ParameterSpec> parameters, TypeName returnType) {
+  private CodeBlock generateMethodCode(String name, List<ParameterSpec> parameters,
+      TypeName returnType) {
     if (name.startsWith("get") || name.startsWith("is")) {
       return generateGetter(name, parameters, returnType);
     } else if (name.startsWith("set")) {
@@ -291,6 +301,10 @@ final class SharedPreferenceImpl {
   }
 
   // type utils
+
+  private String getPackageName(TypeElement annotatedInterface) {
+    return ((PackageElement)annotatedInterface.getEnclosingElement()).getQualifiedName().toString();
+  }
 
   private Iterable<ExecutableElement> getMethodsOf(TypeElement annotatedInterface) {
     List<ExecutableElement> methods = new ArrayList<>();
