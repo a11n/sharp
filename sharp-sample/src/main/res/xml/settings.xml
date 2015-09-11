@@ -1,0 +1,39 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <de.ad.sharp.util.IntEditTextPreference
+      android:key="my_int_preference"
+      android:title="Integer preference"
+      android:summary="This is an integer preference."
+      android:singleLine="true"
+      android:maxLines="1"
+      android:inputType="number"
+      android:defaultValue="4"
+      />
+
+  <de.ad.sharp.util.FloatEditTextPreference
+      android:key="my_float_preference"
+      android:title="Float preference"
+      android:summary="This is an integer preference."
+      android:singleLine="true"
+      android:maxLines="1"
+      android:inputType="numberDecimal"
+      android:defaultValue="4.0"
+      />
+
+  <CheckBoxPreference
+      android:key="my_boolean_preference"
+      android:title="Boolean preference"
+      android:summary="This is a boolean preference."
+      android:defaultValue="true"
+      />
+
+  <EditTextPreference
+      android:key="my_string_preference"
+      android:title="String preference"
+      android:summary="This is a string preference."
+      android:defaultValue="Hello world!"
+      android:singleLine="true"
+      android:maxLines="1"
+      />
+
+</PreferenceScreen>
