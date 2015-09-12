@@ -26,6 +26,8 @@ storage.setMyIntPreference(42);
 ```
 That's it. No struggling with keys anymore.
 
+Please check the [Javadoc](http://a11n.github.io/sharp/javadoc) or the [sample application](https://github.com/a11n/sharp/tree/master/sharp-sample) for detailed information.
+
 ##Usage
 SharP is available via `jcenter()`. The [android-apt](https://bitbucket.org/hvisser/android-apt) plugin is used to setup SharP as annotation processor in Android Studio.
 ```java
