@@ -48,58 +48,6 @@ dependencies {
 }
 ```
 
-##Code Generation
-SharP uses annotation processing and a couple of conventions to generate the boilerplate code for you.
-
-This is what you need to specify:
-
-```java
-package my.package;
-
-@SharedPreference
-interface LocalStorage{
-  String getMyStringPreference();
-  void setMyStringPreference(String value);
-  int getMyIntPreference();
-  void setMyIntPreference(int value);
-}
-```
-
-...and this is what SharP generates for you:
-
-```java
-public final class LocalStorageImpl implements LocalStorage {
-  private final SharedPreferences sharedPreferences;
-  private final SharedPreferences.Editor editor;
-
-  public LocalStorageImpl(Context context) {
-    this.sharedPreferences =
-      context.getSharedPreferences("my.package.LocalStorage", Context.MODE_PRIVATE);
-    this.editor = this.sharedPreferences.edit();
-  }
-
-  @Override
-  public final String getMyStringPreference() {
-    return sharedPreferences.getString("my_string_preference", null);
-  }
-
-  @Override
-  public final void setMyStringPreference(String value) {
-    editor.putString("my_string_preference", value).apply();
-  }
-
-  @Override
-  public final int getMyIntPreference() {
-    return sharedPreferences.getInt("my_int_preference", 0);
-  }
-
-  @Override
-  public final void setMyIntPreference(int value) {
-    editor.putInt("my_int_preference", value).apply();
-  }
-}
-```
-
 ##Principles
 In order to be lightweight and convenient SharP is designed according to the [Convention over Configuration paradigm](https://en.wikipedia.org/wiki/Convention_over_configuration).
 
@@ -112,9 +60,8 @@ In order to be lightweight and convenient SharP is designed according to the [Co
 ####Properties
 * [JavaBean naming conventions](https://en.wikipedia.org/wiki/JavaBeans#JavaBean_conventions) are applied
 * Getters are required to:
- * start with `get`
- * have no parameters and
- * must return a *valid type*
+ * start with `get` and
+ * have no parameters
  * Example: `String getMyStringPreference();`
 * Boolean getters are required to:
  * start with `is`
@@ -123,14 +70,17 @@ In order to be lightweight and convenient SharP is designed according to the [Co
  * Example: `boolean isMyBooleanPreference();`
 * Setters are required:
  * to start with `set`
- * have exactly one parameter of a *valid type*
+ * have exactly one parameter
  * must return `void`
  * Example: `void setMyStringPreference(String value);`
 * Each getters needs a corresponding setter
  * Example: `int getMyIntPreference()` requires declaration of `void setMyIntPreference(int value)`
 
-####Valid types
-* Valid types are: `int`, `long`, `float`, `boolean` and `String`
+####Supported types
+* SharP supports all types, but there is a twofold distinction:
+ * Native types (`int`, `long`, `float`, `boolean` and `String`)
+ * Custom types (any non native type)
+* While *native types* are natively supported by [SharedPreferences](http://developer.android.com/reference/android/content/SharedPreferences.html), *custom types* will be serialized/deserialized and treated as `String`
 
 ####Default values
 * If a value has not been set yet, [Java's default values](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html) are returned according to its type
