@@ -20,6 +20,7 @@ class DefaultSharedPreferenceImpl extends SharedPreferenceImpl {
         .addStatement("$L = $T.$L($L)", "this.sharedPreferences", preferenceManager,
             "getDefaultSharedPreferences", "context")
         .addStatement("$L = $L", "this.editor", "this.sharedPreferences.edit()")
+        .addStatement("$L = $L", "this.gson", "new Gson()")
         .build();
   }
 }

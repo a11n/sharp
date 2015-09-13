@@ -11,13 +11,14 @@ import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
 public class SharedPreferenceProcessorTest {
   @Test public void shouldCompileWithoutError() throws Exception {
     JavaFileObject source = JavaFileObjects.forSourceString("LocalStorage", Joiner.on('\n')
-        .join("package test;", "import de.ad.sharp.api.SharedPreference;",
+        .join("package test;", "import de.ad.sharp.api.SharedPreference;", "import java.util.Date;",
             "@SharedPreference public interface LocalStorage {", "   int getIntPreference();",
             "   void setIntPreference(int value);", "   long getLongPreference();",
             "   void setLongPreference(long value);", "   float getFloatPreference();",
             "   void setFloatPreference(float value);", "   boolean isBooleanPreference();",
             "   void setBooleanPreference(boolean value);", "   String getStringPreference();",
-            "   void setStringPreference(String value);", "void reset();", "}"));
+            "   void setStringPreference(String value);", "   Date getDatePreference();",
+            "   void setDatePreference(Date value);", "void reset();", "}"));
 
     JavaFileObject expectedSource = JavaFileObjects.forSourceString("LocalStorageImpl",
         Joiner.on('\n')
@@ -87,18 +88,6 @@ public class SharedPreferenceProcessorTest {
         .withErrorContaining(SharedPreferenceImpl.ILLEGAL_GETTER_PARAMETER_COUNT);
   }
 
-  @Test public void shouldFailWithIllegalGetterReturnType() throws Exception {
-    JavaFileObject source = JavaFileObjects.forSourceString("LocalStorage", Joiner.on('\n')
-        .join("package test;", "import de.ad.sharp.api.SharedPreference;",
-            "@SharedPreference public interface LocalStorage {", "   void getIntPreference();",
-            "}"));
-
-    assertAbout(javaSource()).that(source)
-        .processedWith(new SharedPreferenceProcessor())
-        .failsToCompile()
-        .withErrorContaining(SharedPreferenceImpl.ILLEGAL_GETTER_RETURN_TYPE);
-  }
-
   @Test public void shouldFailWithIllegalBooleanGetterMessageName() throws Exception {
     JavaFileObject source = JavaFileObjects.forSourceString("LocalStorage", Joiner.on('\n')
         .join("package test;", "import de.ad.sharp.api.SharedPreference;",
@@ -132,18 +121,6 @@ public class SharedPreferenceProcessorTest {
         .processedWith(new SharedPreferenceProcessor())
         .failsToCompile()
         .withErrorContaining(SharedPreferenceImpl.ILLEGAL_SETTER_PARAMETER_COUNT);
-  }
-
-  @Test public void shouldFailWithIllegalSetterParameterType() throws Exception {
-    JavaFileObject source = JavaFileObjects.forSourceString("LocalStorage", Joiner.on('\n')
-        .join("package test;", "import de.ad.sharp.api.SharedPreference;",
-            "@SharedPreference public interface LocalStorage {",
-            "   void setIntPreference(char value);", "}"));
-
-    assertAbout(javaSource()).that(source)
-        .processedWith(new SharedPreferenceProcessor())
-        .failsToCompile()
-        .withErrorContaining(SharedPreferenceImpl.ILLEGAL_SETTER_PARAMETER_TYPE);
   }
 
   @Test public void shouldFailWithIllegalSetterReturnType() throws Exception {
