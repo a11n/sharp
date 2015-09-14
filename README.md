@@ -43,8 +43,8 @@ buildscript {
 apply plugin: 'com.neenbedankt.android-apt'
 
 dependencies {
-  compile 'de.ad:sharp-api:0.2.0'
-  apt 'de.ad:sharp-processor:0.2.0'
+  compile 'de.ad:sharp-api:0.3.0'
+  apt 'de.ad:sharp-processor:0.3.0'
 }
 ```
 
