@@ -9,8 +9,13 @@ targetCompatibility = 1.7
 
 dependencies {
   compile 'com.google.android:android:4.1.1.4'
+  compile 'com.google.code.gson:gson:2.3.1'
 
   testCompile 'junit:junit:4.12'
+}
+
+javadoc{
+  options.addStringOption('Xdoclint:none', '-quiet')
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {

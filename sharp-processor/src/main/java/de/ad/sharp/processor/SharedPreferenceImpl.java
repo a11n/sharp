@@ -26,7 +26,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
 class SharedPreferenceImpl {
-  private static final List<TypeName> VALID_TYPES =
+  private static final List<TypeName> NATIVE_TYPES =
       Arrays.asList(TypeName.INT, TypeName.LONG, TypeName.FLOAT, TypeName.BOOLEAN,
           ClassName.bestGuess("java.lang.String"));
 
@@ -37,15 +37,12 @@ class SharedPreferenceImpl {
       "Method names are supposed to either start with 'get' or 'set'.";
   static final String ILLEGAL_GETTER_PARAMETER_COUNT =
       "Getters are not allowed to have parameters.";
-  static final String ILLEGAL_GETTER_RETURN_TYPE = "This is not a valid return type for getters.";
   static final String ILLEGAL_BOOLEAN_GETTER_MESSAGE_NAME =
       "Boolean getters are supposed to start with 'is'.";
   static final String ILLEGAL_BOOLEAN_GETTER_RETURN_TYPE =
       "Method names starting with is are reserved for boolean getters.";
   static final String ILLEGAL_SETTER_PARAMETER_COUNT =
       "Setters are supposed to have exactly one parameter.";
-  static final String ILLEGAL_SETTER_PARAMETER_TYPE =
-      "This is not a valid parameter type for setters.";
   static final String ILLEGAL_SETTER_RETURN_TYPE = "Setters are supposed to return void.";
   static final String ILLEGAL_RESET_PARAMETER_COUNT = "reset() is not allowed to have parameters.";
   static final String ILLEGAL_RESET_RETURN_TYPE = "This is not a valid return type for reset().";
@@ -93,15 +90,18 @@ class SharedPreferenceImpl {
     ClassName context = ClassName.bestGuess("android.content.Context");
     ClassName sharedPreferences = ClassName.bestGuess("android.content.SharedPreferences");
     ClassName editor = ClassName.bestGuess("android.content.SharedPreferences.Editor");
+    ClassName gson = ClassName.bestGuess("com.google.gson.Gson");
 
     FieldSpec sharedPreferencesField =
         FieldSpec.builder(sharedPreferences, "sharedPreferences", Modifier.PRIVATE, Modifier.FINAL)
             .build();
     FieldSpec editorField =
         FieldSpec.builder(editor, "editor", Modifier.PRIVATE, Modifier.FINAL).build();
+    FieldSpec gsonField = FieldSpec.builder(gson, "gson", Modifier.PRIVATE, Modifier.FINAL).build();
 
     fields.add(sharedPreferencesField);
     fields.add(editorField);
+    fields.add(gsonField);
 
     CodeBlock code = generateConstructorCode(fullyQualifiedName);
 
@@ -117,6 +117,7 @@ class SharedPreferenceImpl {
         .addStatement("$L = $L.$L($S, $L)", "this.sharedPreferences", "context",
             "getSharedPreferences", fullyQualifiedName, "Context.MODE_PRIVATE")
         .addStatement("$L = $L", "this.editor", "this.sharedPreferences.edit()")
+        .addStatement("$L = $L", "this.gson", "new Gson()")
         .build();
   }
 
@@ -165,6 +166,14 @@ class SharedPreferenceImpl {
       TypeName returnType) {
     verifyGetterDeclaration(name, parameters, returnType);
 
+    if (isNativeType(returnType)) {
+      return generateNativeGetter(name, returnType);
+    } else {
+      return generateSerializedGetter(name, returnType);
+    }
+  }
+
+  private CodeBlock generateNativeGetter(String name, TypeName returnType) {
     String getterName = computeGetterNameFor(returnType);
     String key = computeKeyForMethod(name);
     String defaultValue = getDefaultValueFor(returnType);
@@ -174,16 +183,43 @@ class SharedPreferenceImpl {
         .build();
   }
 
+  private CodeBlock generateSerializedGetter(String name, TypeName returnType) {
+    String key = computeKeyForMethod(name);
+
+    return CodeBlock.builder()
+        .addStatement("String json = $L.getString($S, null)", "sharedPreferences", key)
+        .addStatement("return $L.fromJson($L, $L.class)", "gson", "json", returnType.toString())
+        .build();
+  }
+
   private CodeBlock generateSetter(String name, List<ParameterSpec> parameters,
       TypeName returnType) {
     verifySetterDeclaration(parameters, returnType);
 
+    if (isNativeType(parameters.get(0).type)) {
+      return generateNativeSetter(name, parameters);
+    } else {
+      return generateSerializedSetter(name, parameters);
+    }
+  }
+
+  private CodeBlock generateNativeSetter(String name, List<ParameterSpec> parameters) {
     String setterName = computeSetterNameFor(parameters.get(0).type);
     String key = computeKeyForMethod(name);
     String value = parameters.get(0).name;
 
     return CodeBlock.builder()
         .addStatement("$L.$L($S, $L).apply()", "editor", setterName, key, value)
+        .build();
+  }
+
+  private CodeBlock generateSerializedSetter(String name, List<ParameterSpec> parameters) {
+    String key = computeKeyForMethod(name);
+    String value = parameters.get(0).name;
+
+    return CodeBlock.builder()
+        .addStatement("String json = $L.toJson($L)", "gson", value)
+        .addStatement("$L.putString($S, $L).apply()", "editor", key, "json")
         .build();
   }
 
@@ -273,8 +309,6 @@ class SharedPreferenceImpl {
       TypeName returnType) {
     if (parameters.size() > 0) {
       throw illegalArgument(ILLEGAL_GETTER_PARAMETER_COUNT);
-    } else if (!isValid(returnType)) {
-      throw illegalArgument(ILLEGAL_GETTER_RETURN_TYPE);
     } else if (TypeName.BOOLEAN.equals(returnType) && !name.startsWith("is")) {
       throw illegalArgument(ILLEGAL_BOOLEAN_GETTER_MESSAGE_NAME);
     } else if (name.startsWith("is") && !TypeName.BOOLEAN.equals(returnType)) {
@@ -285,8 +319,6 @@ class SharedPreferenceImpl {
   private void verifySetterDeclaration(List<ParameterSpec> parameters, TypeName returnType) {
     if (parameters.size() != 1) {
       throw illegalArgument(ILLEGAL_SETTER_PARAMETER_COUNT);
-    } else if (!isValid(parameters.get(0).type)) {
-      throw illegalArgument(ILLEGAL_SETTER_PARAMETER_TYPE);
     } else if (!TypeName.VOID.equals(returnType)) {
       throw illegalArgument(ILLEGAL_SETTER_RETURN_TYPE);
     }
@@ -303,7 +335,8 @@ class SharedPreferenceImpl {
   // type utils
 
   private String getPackageName(TypeElement annotatedInterface) {
-    return ((PackageElement)annotatedInterface.getEnclosingElement()).getQualifiedName().toString();
+    return ((PackageElement) annotatedInterface.getEnclosingElement()).getQualifiedName()
+        .toString();
   }
 
   private Iterable<ExecutableElement> getMethodsOf(TypeElement annotatedInterface) {
@@ -316,8 +349,8 @@ class SharedPreferenceImpl {
     return methods;
   }
 
-  private boolean isValid(TypeName type) {
-    return VALID_TYPES.contains(type);
+  private boolean isNativeType(TypeName type) {
+    return NATIVE_TYPES.contains(type);
   }
 
   private String getDefaultValueFor(TypeName returnType) {

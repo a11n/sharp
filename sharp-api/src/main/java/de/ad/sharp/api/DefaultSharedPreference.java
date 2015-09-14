@@ -19,10 +19,12 @@ import java.lang.annotation.Target;
  *   public final class LocalStorageImpl implements LocalStorage {
  *     private final SharedPreferences sharedPreferences;
  *     private final SharedPreferences.Editor editor;
+ *     private final Gson gson;
  *
  *     public LocalStorageImpl(Context context) {
  *       this.sharedPreferences = PreferencesManager.getDefaultSharedPreferences(context);
  *       this.editor = this.sharedPreferences.edit();
+ *       this.gson = new Gson();
  *     }
  *
  *     {@literal @}Override
