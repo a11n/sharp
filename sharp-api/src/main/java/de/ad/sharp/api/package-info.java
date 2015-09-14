@@ -25,8 +25,16 @@
  *
  * <h4>Interface</h4>
  * <ul>
- *  <li>The fully qualified interface name is used as unique filename to store your key-value-pairs</li>
- *  <li>The SharedPreferences are always stored in MODE_PRIVATE</li>
+ *  <li>{@code @DefaultSharedPreference:}</li>
+ *  <ul>
+ *    <li>The default {@code SharedPreferences} are used calling {@code PreferencesManager.getDefaultSharedPreferences(Context context)}</li>
+ *    <li>Use this if you want to access the stored preferences from <a href="http://developer.android.com/reference/android/preference/PreferenceFragment.html">PreferenceFragment</a></li>
+ *  </ul>
+ *  <li>@SharedPreference:</li>
+ *  <ul>
+ *    <li>Preferences are stored in their own file in {@code MODE_PRIVATE}</li>
+ *    <li>The fully qualified interface name is used as unique filename</li>
+ *  </ul>
  *  <li>Only top-level interfaces are supported</li>
  * </ul>
  *
