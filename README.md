@@ -1,8 +1,8 @@
-#SharP [![Build Status](https://travis-ci.org/a11n/sharp.svg?branch=master)](https://travis-ci.org/a11n/sharp) [![Coverage Status](https://coveralls.io/repos/a11n/sharp/badge.svg?branch=master&service=github)](https://coveralls.io/github/a11n/sharp?branch=master) [ ![Download](https://api.bintray.com/packages/a11n/maven/de.ad%3Asharp-api/images/download.svg) ](https://bintray.com/a11n/maven/de.ad%3Asharp-api/_latestVersion)
+#SharP [![Build Status](https://travis-ci.org/a11n/sharp.svg?branch=master)](https://travis-ci.org/a11n/sharp) [![Coverage Status](https://coveralls.io/repos/a11n/sharp/badge.svg?branch=master&service=github)](https://coveralls.io/github/a11n/sharp?branch=master) [ ![Download](https://api.bintray.com/packages/a11n/maven/de.ad%3Asharp-api/images/download.svg) ](https://bintray.com/a11n/maven/de.ad%3Asharp-api/_latestVersion) [![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-SharP-green.svg?style=flat)](https://android-arsenal.com/details/1/2483)
 
 SharP wraps your **Shar**ed**P**references into a clean, type-safe Java interface. It uses annotation processing to generate the boilerplate code for you.
 
-Just declare your interface and annotate it to be a `@SharedPreference`:
+Just declare your interface and annotate it to be a `@SharedPreference` or a `@DefaultSharedPreference`:
 ```java
 @SharedPreference
 interface LocalStorage{
@@ -53,8 +53,12 @@ In order to be lightweight and convenient SharP is designed according to the [Co
 
 ###Conventions
 ####Interface
-* The fully qualified `interface` name is used as unique filename to store your key-value-pairs
-* The `SharedPreferences` are always stored in `MODE_PRIVATE`
+* `@DefaultSharedPreference`:
+ * The default `SharedPreferences` are used calling `PreferencesManager.getDefaultSharedPreferences(Context context)`
+ * Use this if you want to access the stored preferences from  [PreferenceFragment](http://developer.android.com/reference/android/preference/PreferenceFragment.html)
+* `@SharedPreference`:
+ * Preferences are stored in their own file in `MODE_PRIVATE`
+ * The fully qualified `interface` name is used as unique filename
 * Only top-level interfaces are supported
 
 ####Properties
