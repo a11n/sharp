@@ -14,10 +14,6 @@ dependencies {
   testCompile 'junit:junit:4.12'
 }
 
-javadoc{
-  options.addStringOption('Xdoclint:none', '-quiet')
-}
-
 task sourcesJar(type: Jar, dependsOn: classes) {
   classifier = 'sources'
   from sourceSets.main.allSource
